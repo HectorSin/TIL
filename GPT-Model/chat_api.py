@@ -4,6 +4,8 @@ openai.api_key = "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"
 
 messages = []
 with open('sp500.txt','w',encoding='UTF-8') as f:
+    {"role": "system", "content": "You are a helpful assistant."},
+    
     while True:
         user_content = input("user : ")
 
