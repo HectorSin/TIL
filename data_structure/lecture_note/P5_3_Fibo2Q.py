@@ -1,4 +1,4 @@
-from queueCircular import CircularQueue
+from multiprocessing import CircularQueue
 
 Q = CircularQueue()
 Q.enqueue(0)

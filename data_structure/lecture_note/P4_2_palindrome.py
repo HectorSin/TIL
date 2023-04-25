@@ -1,4 +1,4 @@
-from stack import Stack
+from pyarabic.stack import Stack
 import sys
 
 instr = input("문자열 입력:")
@@ -10,7 +10,7 @@ for ch in instr:
         continue         # 스페이스나 구두점 제외
     s.push(ch)           # 입력 문자열의 모든 문자를 스택에 삽입
 
-print("스택: ", s.top)
+print("스택: ", s.pop)
 
 for ch in instr:  # 문자열의 앞쪽에서 뒤쪽 방향으로 문자 가져옴
     if ord(ch) < ord('a') or ord(ch) > ord('z') :
