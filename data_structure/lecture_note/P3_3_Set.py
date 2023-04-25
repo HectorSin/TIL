@@ -21,7 +21,7 @@ class Set:
            self.items.append(elem)
 
     def delete(self, elem) :
-#        if elem in self.items :
+#        if elem in self.items:
 #            self.items.remove(elem)
 # P3.3(2)
         for i in range(len(self.items)) :
@@ -61,9 +61,10 @@ class Set:
         return self.difference(setB)
 
 # P3.3(5)
-    def isSubsetOf( self, setB ):
-        for elem in self.items :
-            if elem not in setB : return False
+    def isSubsetOf(self, setB):
+        for elem in self.items:
+            if elem not in setB: 
+                return False
         return True
 
     def display(self, msg):
