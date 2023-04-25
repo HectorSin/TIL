@@ -27,7 +27,6 @@ class Set:
         for i in range(len(self.items)) :
             if self.items[i] == elem :
                 self.items.pop(i)
-	        return
     
     def union( self, setB ):                # C = self U  B
         newSet = Set()
