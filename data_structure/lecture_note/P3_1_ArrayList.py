@@ -7,15 +7,19 @@ class ArrayList:
 # P3.1(1)
     def insert(self, pos, elem) :
         self.items.append(elem)
+        # pos 위치부터 뒤로 복사해 밀기
         for i in range(len(self.items)-2, pos-1, -1) :
             self.items[i+1] = self.items[i]
+        # pos 위치에 원하는 데이터 덮어씌우기
         self.items[pos] = elem
 
 #    def delete(self, pos) : self.items.pop(pos)
 # P3.1(2)
-    def delete(self, pos) :
+    def delete(self, pos):
+        # pos위치까지 데이터를 땡겨서 덮어 씌우기
         for i in range(pos, len(self.items)-1):
             self.items[i] = self.items[i+1]
+        # 마지막 남은 데이터 삭제
         self.items.pop(-1)
 
     def size( self ): return len(self.items)
