@@ -2,7 +2,7 @@
 # 연결 리스트로 구현해서 메모리 문제 해결
 
 class Tnode:
-    def __init__(self, data, left, right):
+    def __init__(self, data, left=None, right=None):
         self.data = data
         self.left = left
         self.right = right
