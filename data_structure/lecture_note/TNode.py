@@ -9,11 +9,11 @@ class Tnode:
 
     # 세가지 순회 방식이 있다 (전위 / 중위 / 후위)
     # 전위 순회 방식
-    def preorder(n):
-        if n is not None:
-            print(n.data, end='')
-            preorder(n.left)
-            preorder(n.right)
+    def preorder(self):
+        if self.data is not None:
+            print(self.data, end='')
+            preorder(self.left)
+            preorder(self.right)
     
     def inorder(n):
         if n is not None:
@@ -26,3 +26,7 @@ class Tnode:
             postorder(n.left)
             postorder(n.right)
             print(n.data, end=' ')
+
+alex = Tnode(1)
+
+alex.inorder()
