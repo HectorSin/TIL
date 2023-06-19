@@ -139,5 +139,56 @@ def dfs_cc(graph, color, vertex, visited):
     
 # 신장 트리 알고리즘
 def bfsST(graph, start):
+    # 맨 처음에는 start만 방문한 정점임
     visited = set([start])
+    # 파이썬 컬렉션의 덱 생성(큐로 사용)
+    queue = collections.deque([start])
+    # 공백이 아닐 때 까지
+    while queue:
+        # 큐에서 하나의 정점 v를 빼냄
+        v = queue.popleft()
+        # nbr = {v의 인접정점} - {방문정점}
+        nbr = graph[v] - visited
+        # 갈 수 있는 모든 인접 정점에 대해
+        for u in nbr:
+            # (v,u)간선 추가
+            print("(", v, ",", u, ")", end="")
+            # 이제 u는 방문했음
+            visited.add(u)
+            # u를 큐에 삽입
+            queue.append(u)
     
+# 위상 정렬 알고리즘
+def topological_sort_AM(vertex, graph):
+    n = len(vertex)
+    # 정점의 진입차수 저장
+    inDeg = [0] * n
+
+    for i in range(n):
+        for j in range(n):
+            # 인접 행렬로 표현한 그래프 이용
+            if graph[i][j] > 0:
+                # 진입차수를 1 증가시킴
+                inDeg[j] += 1
+
+    # 진입차수가 0인 정점 리스트를 만듦
+    vlist = []
+    for i in range(n):
+        if inDeg[i]==0:
+            vlist.append(i)
+
+    # 리스트가 공백이 아닐 때 까지
+    while len(vlist) > 0:
+        # 진입차수가 0인 정점을 하나 꺼냄
+        v = vlist.pop()
+        # 화면 출력
+        print(vertex[v], end=' ')
+
+        for u in range(n):
+            if v != u and graph[v][u] > 0:
+                # 연결된 정점의 진입차수 감소
+                inDeg[u] -= 1
+                # 진입차수가 0이면
+                if inDeg[u] == 0:
+                    # vlist에 추가
+                    vlist.append(u)
