@@ -4,4 +4,4 @@
 
 ## Ch2.
 
-[## Ch3. 증명](./CH3/README.md)
+## [Ch3. 증명](./CH3/README.md)
