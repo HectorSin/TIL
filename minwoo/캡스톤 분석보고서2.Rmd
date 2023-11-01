@@ -1,0 +1,703 @@
+---
+title: "캡스톤 분석보고서2"
+author: "201821496_안민우"
+date: "2023-10-26"
+output: html_document
+---
+
+### 1. 프로젝트 변경점 및 진행 방향
+
+1) 히트맵을 작성할 것(공간모형 활용)
+- 공간 모형 활용을 통한 서울시 도시환경에 맞는 적법한 방법 방안 마련을 위한 권역별 범죄 발생 취약구역 및 특이점 분석
+2) 연구 소개는 추합이 아니라 아디이더 구체화 및 적합한 해결방안 제시 쪽으로 진행하기
+3) 연구 방향성에서 9대 범죄 중 성폭력, 절도 2개 위주의 분석으로 진행
+- 너무 자료가 부족한 부분은 제하고 1~5등급으로 시각화
+4) 공간적 자기상관성을 확인하기 위한 Moran's 1 지수 활용은 분석 과정에 맞춰 유동적으로 활용
+5) 설문조사 자료는 CSV 파일로 바꿔 활용
+6) 자리가중회귀분석 활용은 유동적으로 정함
+7) 선행연구에서 활용된 방법들은 최대한 활용
+8) 선행 연구의 부족한 부분은 필수로 기록
+9) 일상활동 이론 & 범죄 예방 환경 설계 이론은 최대한 활용
+10) 분석에 있어서는 일반산술평균을 활용
+11) 치안등급은 차수화하기. 이유는 시각화 때 편하게 보기 위해서
+12) 주 분석은 성폭력 위험도와 절도 위험도
+- 특징적으로 발생하는 이유 명확히 설명
+13) 공간회귀모델은 필수로 활용
+14) 종속변수, 독립변수는 보고서 위주로 활용하되 가공하는 파트는 유동적으로 변환 가능하게 분석
+15) 치안등급 자료를 행정구역 '구' 위주로 나누는 방향으로 진행하되 필요 시 동으로 나누는 것도 고려
+16) 같은 지역에 파출소가 복수 존재 시 조작 방법에 대해서는 유동적으로 진행
+
+
+### 2. 전처리 파일 불러오기, 필요 패키지 설치, 보고서1에서 정리한 형태 불러오기
+
+```{r}
+# 필요 패키지 설치치
+#install.packages("agricolae")
+#install.packages("tidyverse")
+#install.packages("ggplot2")
+#install.packages("plyr")
+#install.packages("ggmap")
+#install.packages("raster")
+#install.packages("rgeos")
+#install.packages("maptools")
+#install.packages("rgdal")
+
+# 패키지 불러오기
+library(agricolae)
+library(tidyverse)
+library(ggplot2)
+library(plyr)
+library(ggmap)
+library(raster)
+library(rgeos)
+library(maptools)
+library(rgdal)
+
+# 전처리 파일 불러오기
+CS1 <- read.csv("Data1.csv")
+# 범죄 종류 별 발생&검거 전체 건수 파일
+CS2 <- read.csv("Data2.csv") 
+# 범죄 종류 별 비율 파일
+CS3 <- read.csv("Data3.csv") 
+# 범죄 종류 별 검거율 파일
+CS4 <- read.csv("Data4.csv") 
+# 구역별 범죄 건수 파일(데이터 전처리 전)
+CS5 <- read.csv("Data5.csv") 
+# 구역별 범죄 건수 파일(시각화용 처리 파일)  
+CS6 <- read.csv("Data6.csv") 
+# 서울시 전체 5대 범죄 비율 파일(원그래프 용 처리 파일 )
+CS7 <- read.csv("Data7.csv")
+# 서울시 발생장소별 범죄 파일(데이터 전처리 전)
+CS8 <- read.csv("Data8.csv")
+# 발생 장소 별 살인 사건 비율 비교 파일
+CS9 <- read.csv("Data9.csv")
+# 발생 장소 별 강도 사건 비율 비교 파일
+CS10 <- read.csv("Data10.csv")
+# 발생 장소 별 강간/강제추행 사건 비교 파일
+CS11 <- read.csv("Data11.csv")
+# 발생 장소 별 절도 사건 비율 비교 파일
+CS12 <- read.csv("Data12.csv")
+# 발생 장소 별 폭행 사건 비율 비교 파일
+CS13 <- read.csv("Data13.csv")
+# 행정구역 별 인구 데이터 파일(데이터 전처리 전) 
+CS14 <- read.csv("Data14.csv")
+# 행정구역 별 인구 종류 별 데이터 파일(시각화용 처리 파일)
+
+# 필요 데이터 정리 파일
+
+# 구역별 살인 건수(미중요 파일1)
+Place_kill <- CS5
+Place_kill <- Place_kill[-(2:5), ]
+Place_kill <- Place_kill[-(3:6), ]
+Place_kill <- Place_kill[-(4:7), ]
+Place_kill <- Place_kill[-(5:8), ]
+Place_kill <- Place_kill[-(6:9), ]
+Place_kill <- Place_kill[-(7:10), ]
+Place_kill <- Place_kill[-(8:11), ]
+Place_kill <- Place_kill[-(9:12), ]
+Place_kill <- Place_kill[-(10:13), ]
+Place_kill <- Place_kill[-(11:14), ]
+Place_kill <- Place_kill[-(12:15), ]
+Place_kill <- Place_kill[-(13:16), ]
+Place_kill <- Place_kill[-(14:17), ]
+Place_kill <- Place_kill[-(15:18), ]
+Place_kill <- Place_kill[-(16:19), ]
+Place_kill <- Place_kill[-(17:20), ]
+Place_kill <- Place_kill[-(18:21), ]
+Place_kill <- Place_kill[-(19:22), ]
+Place_kill <- Place_kill[-(20:23), ]
+Place_kill <- Place_kill[-(21:24), ]
+Place_kill <- Place_kill[-(22:25), ]
+Place_kill <- Place_kill[-(23:26), ]
+Place_kill <- Place_kill[-(24:27), ]
+Place_kill <- Place_kill[-(25:28), ]
+Place_kill <- Place_kill[-(26:29), ]
+print(head(Place_kill, 5))
+
+# 구역별 강도 건수(미중요 파일2)
+Place_robber <- CS5
+Place_robber <- Place_robber[-1, ]
+Place_robber <- Place_robber[-(2:5), ]
+Place_robber <- Place_robber[-(3:6), ]
+Place_robber <- Place_robber[-(4:7), ]
+Place_robber <- Place_robber[-(5:8), ]
+Place_robber <- Place_robber[-(6:9), ]
+Place_robber <- Place_robber[-(7:10), ]
+Place_robber <- Place_robber[-(8:11), ]
+Place_robber <- Place_robber[-(9:12), ]
+Place_robber <- Place_robber[-(10:13), ]
+Place_robber <- Place_robber[-(11:14), ]
+Place_robber <- Place_robber[-(12:15), ]
+Place_robber <- Place_robber[-(13:16), ]
+Place_robber <- Place_robber[-(14:17), ]
+Place_robber <- Place_robber[-(15:18), ]
+Place_robber <- Place_robber[-(16:19), ]
+Place_robber <- Place_robber[-(17:20), ]
+Place_robber <- Place_robber[-(18:21), ]
+Place_robber <- Place_robber[-(19:22), ]
+Place_robber <- Place_robber[-(20:23), ]
+Place_robber <- Place_robber[-(21:24), ]
+Place_robber <- Place_robber[-(22:25), ]
+Place_robber <- Place_robber[-(23:26), ]
+Place_robber <- Place_robber[-(24:27), ]
+Place_robber <- Place_robber[-(25:28), ]
+Place_robber <- Place_robber[-(26:28), ]
+print(head(Place_robber, 5))
+
+# 구역별 성범죄 건수 비교(중요 파일1)
+Place_sexual <- CS5
+Place_sexual <- Place_sexual[-(1:2), ]
+Place_sexual <- Place_sexual[-(2:5), ]
+Place_sexual <- Place_sexual[-(3:6), ]
+Place_sexual <- Place_sexual[-(4:7), ]
+Place_sexual <- Place_sexual[-(5:8), ]
+Place_sexual <- Place_sexual[-(6:9), ]
+Place_sexual <- Place_sexual[-(7:10), ]
+Place_sexual <- Place_sexual[-(8:11), ]
+Place_sexual <- Place_sexual[-(9:12), ]
+Place_sexual <- Place_sexual[-(10:13), ]
+Place_sexual <- Place_sexual[-(11:14), ]
+Place_sexual <- Place_sexual[-(12:15), ]
+Place_sexual <- Place_sexual[-(13:16), ]
+Place_sexual <- Place_sexual[-(14:17), ]
+Place_sexual <- Place_sexual[-(15:18), ]
+Place_sexual <- Place_sexual[-(16:19), ]
+Place_sexual <- Place_sexual[-(17:20), ]
+Place_sexual <- Place_sexual[-(18:21), ]
+Place_sexual <- Place_sexual[-(19:22), ]
+Place_sexual <- Place_sexual[-(20:23), ]
+Place_sexual <- Place_sexual[-(21:24), ]
+Place_sexual <- Place_sexual[-(22:25), ]
+Place_sexual <- Place_sexual[-(23:26), ]
+Place_sexual <- Place_sexual[-(24:27), ]
+Place_sexual <- Place_sexual[-(25:28), ]
+Place_sexual <- Place_sexual[-(26:27), ]
+print(head(Place_sexual, 5))
+
+# 구역별 절도 건수 비교(중요 파일2)
+Place_theft <- CS5
+Place_theft <- Place_theft[-(1:3), ]
+Place_theft <- Place_theft[-(2:5), ]
+Place_theft <- Place_theft[-(3:6), ]
+Place_theft <- Place_theft[-(4:7), ]
+Place_theft <- Place_theft[-(5:8), ]
+Place_theft <- Place_theft[-(6:9), ]
+Place_theft <- Place_theft[-(7:10), ]
+Place_theft <- Place_theft[-(8:11), ]
+Place_theft <- Place_theft[-(9:12), ]
+Place_theft <- Place_theft[-(10:13), ]
+Place_theft <- Place_theft[-(11:14), ]
+Place_theft <- Place_theft[-(12:15), ]
+Place_theft <- Place_theft[-(13:16), ]
+Place_theft <- Place_theft[-(14:17), ]
+Place_theft <- Place_theft[-(15:18), ]
+Place_theft <- Place_theft[-(16:19), ]
+Place_theft <- Place_theft[-(17:20), ]
+Place_theft <- Place_theft[-(18:21), ]
+Place_theft <- Place_theft[-(19:22), ]
+Place_theft <- Place_theft[-(20:23), ]
+Place_theft <- Place_theft[-(21:24), ]
+Place_theft <- Place_theft[-(22:25), ]
+Place_theft <- Place_theft[-(23:26), ]
+Place_theft <- Place_theft[-(24:27), ]
+Place_theft <- Place_theft[-(25:28), ]
+Place_theft <- Place_theft[-26, ]
+print(head(Place_theft, 5))
+
+# 구역별 폭행 건수 비교(미확정 파일1)
+Place_assault <- CS5
+Place_assault <- Place_assault[-(1:4), ]
+Place_assault <- Place_assault[-(2:5), ]
+Place_assault <- Place_assault[-(3:6), ]
+Place_assault <- Place_assault[-(4:7), ]
+Place_assault <- Place_assault[-(5:8), ]
+Place_assault <- Place_assault[-(6:9), ]
+Place_assault <- Place_assault[-(7:10), ]
+Place_assault <- Place_assault[-(8:11), ]
+Place_assault <- Place_assault[-(9:12), ]
+Place_assault <- Place_assault[-(10:13), ]
+Place_assault <- Place_assault[-(11:14), ]
+Place_assault <- Place_assault[-(12:15), ]
+Place_assault <- Place_assault[-(13:16), ]
+Place_assault <- Place_assault[-(14:17), ]
+Place_assault <- Place_assault[-(15:18), ]
+Place_assault <- Place_assault[-(16:19), ]
+Place_assault <- Place_assault[-(17:20), ]
+Place_assault <- Place_assault[-(18:21), ]
+Place_assault <- Place_assault[-(19:22), ]
+Place_assault <- Place_assault[-(20:23), ]
+Place_assault <- Place_assault[-(21:24), ]
+Place_assault <- Place_assault[-(22:25), ]
+Place_assault <- Place_assault[-(23:26), ]
+Place_assault <- Place_assault[-(24:27), ]
+Place_assault <- Place_assault[-(25:28), ]
+print(head(Place_assault, 5))
+
+# 시설 별 살인 건수 비교(미중요 파일3)
+Facilities_kill <- CS16
+Facilities_kill <- Facilities_kill[-(2:5), ]
+Facilities_kill <- Facilities_kill[-(3:6), ]
+Facilities_kill <- Facilities_kill[-(4:7), ]
+Facilities_kill <- Facilities_kill[-(5:8), ]
+Facilities_kill <- Facilities_kill[-(6:9), ]
+Facilities_kill <- Facilities_kill[-(7:10), ]
+Facilities_kill <- Facilities_kill[-(8:11), ]
+Facilities_kill <- Facilities_kill[-(9:12), ]
+Facilities_kill <- Facilities_kill[-(10:13), ]
+Facilities_kill <- Facilities_kill[-(11:14), ]
+Facilities_kill <- Facilities_kill[-(12:15), ]
+Facilities_kill <- Facilities_kill[-(13:16), ]
+Facilities_kill <- Facilities_kill[-(14:17), ]
+print(head(Facilities_kill, 5))
+
+# 시설 별 강도 건수 비교(미중요 파일4)
+Facilities_robber <- CS16
+Facilities_robber <- Facilities_robber[-1, ]
+Facilities_robber <- Facilities_robber[-(2:5), ]
+Facilities_robber <- Facilities_robber[-(3:6), ]
+Facilities_robber <- Facilities_robber[-(4:7), ]
+Facilities_robber <- Facilities_robber[-(5:8), ]
+Facilities_robber <- Facilities_robber[-(6:9), ]
+Facilities_robber <- Facilities_robber[-(7:10), ]
+Facilities_robber <- Facilities_robber[-(8:11), ]
+Facilities_robber <- Facilities_robber[-(9:12), ]
+Facilities_robber <- Facilities_robber[-(10:13), ]
+Facilities_robber <- Facilities_robber[-(11:14), ]
+Facilities_robber <- Facilities_robber[-(12:15), ]
+Facilities_robber <- Facilities_robber[-(13:16), ]
+Facilities_robber <- Facilities_robber[-(14:16), ]
+print(head(Facilities_robber, 5))
+
+# 시설 별 성범죄 건수 비교(중요 파일4)
+Facilities_sexual <- CS16
+Facilities_sexual <- Facilities_sexual[-(1:2), ]
+Facilities_sexual <- Facilities_sexual[-(2:5), ]
+Facilities_sexual <- Facilities_sexual[-(3:6), ]
+Facilities_sexual <- Facilities_sexual[-(4:7), ]
+Facilities_sexual <- Facilities_sexual[-(5:8), ]
+Facilities_sexual <- Facilities_sexual[-(6:9), ]
+Facilities_sexual <- Facilities_sexual[-(7:10), ]
+Facilities_sexual <- Facilities_sexual[-(8:11), ]
+Facilities_sexual <- Facilities_sexual[-(9:12), ]
+Facilities_sexual <- Facilities_sexual[-(10:13), ]
+Facilities_sexual <- Facilities_sexual[-(11:14), ]
+Facilities_sexual <- Facilities_sexual[-(12:15), ]
+Facilities_sexual <- Facilities_sexual[-(13:16), ]
+Facilities_sexual <- Facilities_sexual[-(14:15), ]
+print(head(Facilities_sexual, 5))
+
+# 시설 별 절도 건수 비교(중요 파일5)
+Facilities_theft <- CS16
+Facilities_theft <- Facilities_theft[-(1:3), ]
+Facilities_theft <- Facilities_theft[-(2:5), ]
+Facilities_theft <- Facilities_theft[-(3:6), ]
+Facilities_theft <- Facilities_theft[-(4:7), ]
+Facilities_theft <- Facilities_theft[-(5:8), ]
+Facilities_theft <- Facilities_theft[-(6:9), ]
+Facilities_theft <- Facilities_theft[-(7:10), ]
+Facilities_theft <- Facilities_theft[-(8:11), ]
+Facilities_theft <- Facilities_theft[-(9:12), ]
+Facilities_theft <- Facilities_theft[-(10:13), ]
+Facilities_theft <- Facilities_theft[-(11:14), ]
+Facilities_theft <- Facilities_theft[-(12:15), ]
+Facilities_theft <- Facilities_theft[-(13:16), ]
+Facilities_theft <- Facilities_theft[-14, ]
+print(head(Facilities_theft, 5))
+
+# 시설 별 폭행 건수 비교(미확정 파일2)
+Facilities_assault <- CS16
+Facilities_assault <- Facilities_assault[-(1:4), ]
+Facilities_assault <- Facilities_assault[-(2:5), ]
+Facilities_assault <- Facilities_assault[-(3:6), ]
+Facilities_assault <- Facilities_assault[-(4:7), ]
+Facilities_assault <- Facilities_assault[-(5:8), ]
+Facilities_assault <- Facilities_assault[-(6:9), ]
+Facilities_assault <- Facilities_assault[-(7:10), ]
+Facilities_assault <- Facilities_assault[-(8:11), ]
+Facilities_assault <- Facilities_assault[-(9:12), ]
+Facilities_assault <- Facilities_assault[-(10:13), ]
+Facilities_assault <- Facilities_assault[-(11:14), ]
+Facilities_assault <- Facilities_assault[-(12:15), ]
+Facilities_assault <- Facilities_assault[-(13:16), ]
+print(head(Facilities_assault, 5))
+
+# 시설 별 범죄 전체 건수 비교(중요 파일6)
+CS17 <- read.csv("Data17.csv")
+Facilities_all <- CS17
+print(head(CS17, 5))
+
+# 행정구역 별 전체 인구 수 비교(중요 파일7)
+People_place <- CS14
+People_place <- People_place[1:3]
+People_place <- People_place[-1, ]
+People_place <- People_place[-(2:7), ]
+People_place <- People_place[-(3:8), ]
+People_place <- People_place[-(4:9), ]
+People_place <- People_place[-(5:10), ]
+People_place <- People_place[-(6:11), ]
+People_place <- People_place[-(7:12), ]
+People_place <- People_place[-(8:13), ]
+People_place <- People_place[-(9:14), ]
+People_place <- People_place[-(10:15), ]
+People_place <- People_place[-(11:16), ]
+People_place <- People_place[-(12:17), ]
+People_place <- People_place[-(13:18), ]
+People_place <- People_place[-(14:19), ]
+People_place <- People_place[-(15:20), ]
+People_place <- People_place[-(16:21), ]
+People_place <- People_place[-(17:22), ]
+People_place <- People_place[-(18:23), ]
+People_place <- People_place[-(19:24), ]
+People_place <- People_place[-(20:25), ]
+People_place <- People_place[-(21:26), ]
+People_place <- People_place[-(22:27), ]
+People_place <- People_place[-(23:28), ]
+People_place <- People_place[-(24:29), ]
+People_place <- People_place[-(25:30), ]
+People_place <- People_place[-(26:30), ]
+print(head(People_place, 5))
+
+# 행정구역 별 세대 수 비교(미확정 파일3)
+House_place <- CS14 
+House_place <- House_place[1:3]
+House_place <- House_place[-(2:7),]
+House_place <- House_place[-(3:8),]
+House_place <- House_place[-(4:9),]
+House_place <- House_place[-(5:10),]
+House_place <- House_place[-(6:11),]
+House_place <- House_place[-(7:12),]
+House_place <- House_place[-(8:13),]
+House_place <- House_place[-(9:14),]
+House_place <- House_place[-(10:15),]
+House_place <- House_place[-(11:16),]
+House_place <- House_place[-(12:17),]
+House_place <- House_place[-(13:18),]
+House_place <- House_place[-(14:19),]
+House_place <- House_place[-(15:20),]
+House_place <- House_place[-(16:21),]
+House_place <- House_place[-(17:22),]
+House_place <- House_place[-(18:23),]
+House_place <- House_place[-(19:24),]
+House_place <- House_place[-(20:25),]
+House_place <- House_place[-(21:26),]
+House_place <- House_place[-(22:27),]
+House_place <- House_place[-(23:28),]
+House_place <- House_place[-(24:29),]
+House_place <- House_place[-(25:30),]
+House_place <- House_place[-(26:32),]
+print(head(House_place, 5))
+
+# 행정구역 별 한국인 인구 수 비교(미확정 파일4)
+Korean_place <- CS14
+Korean_place <- Korean_place[1:3]
+Korean_place <- Korean_place[-(1:2), ]
+Korean_place <- Korean_place[-(2:7), ]
+Korean_place <- Korean_place[-(3:8), ]
+Korean_place <- Korean_place[-(4:9), ]
+Korean_place <- Korean_place[-(5:10), ]
+Korean_place <- Korean_place[-(6:11), ]
+Korean_place <- Korean_place[-(7:12), ]
+Korean_place <- Korean_place[-(8:13), ]
+Korean_place <- Korean_place[-(9:14), ]
+Korean_place <- Korean_place[-(10:15), ]
+Korean_place <- Korean_place[-(11:16), ]
+Korean_place <- Korean_place[-(12:17), ]
+Korean_place <- Korean_place[-(13:18), ]
+Korean_place <- Korean_place[-(14:19), ]
+Korean_place <- Korean_place[-(15:20), ]
+Korean_place <- Korean_place[-(16:21), ]
+Korean_place <- Korean_place[-(17:22), ]
+Korean_place <- Korean_place[-(18:23), ]
+Korean_place <- Korean_place[-(19:24), ]
+Korean_place <- Korean_place[-(20:25), ]
+Korean_place <- Korean_place[-(21:26), ]
+Korean_place <- Korean_place[-(22:27), ]
+Korean_place <- Korean_place[-(23:28), ]
+Korean_place <- Korean_place[-(24:29), ]
+Korean_place <- Korean_place[-(25:30), ]
+Korean_place <- Korean_place[-(26:29), ]
+print(head(Korean_place, 5))
+
+# 행정구역 별 등록외국인 인구 수 비교(미확정 파일5)
+Foreigner_place <- CS14
+Foreigner_place <- Foreigner_place[1:3]
+Foreigner_place <- Foreigner_place[-(1:3), ]
+Foreigner_place <- Foreigner_place[-(2:7), ]
+Foreigner_place <- Foreigner_place[-(3:8), ]
+Foreigner_place <- Foreigner_place[-(4:9), ]
+Foreigner_place <- Foreigner_place[-(5:10), ]
+Foreigner_place <- Foreigner_place[-(6:11), ]
+Foreigner_place <- Foreigner_place[-(7:12), ]
+Foreigner_place <- Foreigner_place[-(8:13), ]
+Foreigner_place <- Foreigner_place[-(9:14), ]
+Foreigner_place <- Foreigner_place[-(10:15), ]
+Foreigner_place <- Foreigner_place[-(11:16), ]
+Foreigner_place <- Foreigner_place[-(12:17), ]
+Foreigner_place <- Foreigner_place[-(13:18), ]
+Foreigner_place <- Foreigner_place[-(14:19), ]
+Foreigner_place <- Foreigner_place[-(15:20), ]
+Foreigner_place <- Foreigner_place[-(16:21), ]
+Foreigner_place <- Foreigner_place[-(17:22), ]
+Foreigner_place <- Foreigner_place[-(18:23), ]
+Foreigner_place <- Foreigner_place[-(19:24), ]
+Foreigner_place <- Foreigner_place[-(20:25), ]
+Foreigner_place <- Foreigner_place[-(21:26), ]
+Foreigner_place <- Foreigner_place[-(22:27), ]
+Foreigner_place <- Foreigner_place[-(23:28), ]
+Foreigner_place <- Foreigner_place[-(24:29), ]
+Foreigner_place <- Foreigner_place[-(25:30), ]
+Foreigner_place <- Foreigner_place[-(26:280), ]
+print(head(Foreigner_place, 5))
+
+# 행정구역 별 65세 이상 고령자 인구 수 비교(미확정 파일6)
+Elder_place <- CS14
+Elder_place <- Elder_place[1:3]
+Elder_place <- Elder_place[-(1:5), ]
+Elder_place <- Elder_place[-(2:7), ]
+Elder_place <- Elder_place[-(3:8), ]
+Elder_place <- Elder_place[-(4:9), ]
+Elder_place <- Elder_place[-(5:10), ]
+Elder_place <- Elder_place[-(6:11), ]
+Elder_place <- Elder_place[-(7:12), ]
+Elder_place <- Elder_place[-(8:13), ]
+Elder_place <- Elder_place[-(9:14), ]
+Elder_place <- Elder_place[-(10:15), ]
+Elder_place <- Elder_place[-(11:16), ]
+Elder_place <- Elder_place[-(12:17), ]
+Elder_place <- Elder_place[-(13:18), ]
+Elder_place <- Elder_place[-(14:19), ]
+Elder_place <- Elder_place[-(15:20), ]
+Elder_place <- Elder_place[-(16:21), ]
+Elder_place <- Elder_place[-(17:22), ]
+Elder_place <- Elder_place[-(18:23), ]
+Elder_place <- Elder_place[-(19:24), ]
+Elder_place <- Elder_place[-(20:25), ]
+Elder_place <- Elder_place[-(21:26), ]
+Elder_place <- Elder_place[-(22:27), ]
+Elder_place <- Elder_place[-(23:28), ]
+Elder_place <- Elder_place[-(24:29), ]
+Elder_place <- Elder_place[-(25:30), ]
+Elder_place <- Elder_place[-26, ]
+print(head(Elder_place, 5))
+
+# 서울시 구역별 경찰청, 경찰서, 파출소 개수 자료(중요 파일8) <- 데이터 정제 전전
+CS18 <- read.csv("Data18.csv")
+Police_statement <- CS18
+Police_statement <- Police_statement[, -1]
+Police_statement <- Police_statement[, -(2:35)]
+Police_statement <- Police_statement[, -(2:35)]
+Police_statement <- Police_statement[, -(2:35)]
+Police_statement <- Police_statement[, -(2:35)]
+Police_statement <- Police_statement[, -(2:35)]
+Police_statement <- Police_statement[, -(2:13)]
+Police_statement <- Police_statement[, -(5:7)]
+Police_statement <- Police_statement[-28, ]
+
+colnames(Police_statement) = c("자치구", "경찰청", "경찰서", "지구대파출소치안센터")
+Police_statement <- Police_statement[-1, ]
+
+row.names(Police_statement) = c("소계", "종로구", "중구", "용산구", "성동구", "광진구", "동대문구", "중랑구", "성북구", "강북구", "도봉구", "노원구", "은평구", "서대문구", "마포구", "양천구", "강서구", "구로구", "금천구", "영등포구", "동작구", "관악구", "서초구", "강남구", "송파구", "강동구")
+Police_statement <- Police_statement[, -1]
+
+print(head(Police_statement, 5))
+
+# 서울시 구역별 경찰청, 경찰서, 파출소 개수 자료(중요 파일9)
+CS19 <- read.csv("Data19.csv")
+print(head(CS19, 5))
+
+# 서울시 구역별 경찰서 개수 자료
+Police_Office <- CS19
+Police_Office <- Police_Office[-1, ]
+Police_Office <- Police_Office[-(2:3), ]
+Police_Office <- Police_Office[-(3:4), ]
+Police_Office <- Police_Office[-(4:5), ]
+Police_Office <- Police_Office[-(5:6), ]
+Police_Office <- Police_Office[-(6:7), ]
+Police_Office <- Police_Office[-(7:8), ]
+Police_Office <- Police_Office[-(8:9), ]
+Police_Office <- Police_Office[-(9:10), ]
+Police_Office <- Police_Office[-(10:11), ]
+Police_Office <- Police_Office[-(11:12), ]
+Police_Office <- Police_Office[-(12:13), ]
+Police_Office <- Police_Office[-(13:14), ]
+Police_Office <- Police_Office[-(14:15), ]
+Police_Office <- Police_Office[-(15:16), ]
+Police_Office <- Police_Office[-(16:17), ]
+Police_Office <- Police_Office[-(17:18), ]
+Police_Office <- Police_Office[-(18:19), ]
+Police_Office <- Police_Office[-(19:20), ]
+Police_Office <- Police_Office[-(20:21), ]
+Police_Office <- Police_Office[-(21:22), ]
+Police_Office <- Police_Office[-(22:23), ]
+Police_Office <- Police_Office[-(23:24), ]
+Police_Office <- Police_Office[-(24:25), ]
+Police_Office <- Police_Office[-(25:26), ]
+Police_Office <- Police_Office[-26, ]
+
+print(head(Police_Office, 5))
+
+# 서울시 구역별 지구대/파출소/치안센터 개수 자료
+Police_box <- CS19
+Police_box <- Police_box[-(1:2), ]
+Police_box <- Police_box[-(2:3), ]
+Police_box <- Police_box[-(3:4), ]
+Police_box <- Police_box[-(4:5), ]
+Police_box <- Police_box[-(5:6), ]
+Police_box <- Police_box[-(6:7), ]
+Police_box <- Police_box[-(7:8), ]
+Police_box <- Police_box[-(8:9), ]
+Police_box <- Police_box[-(9:10), ]
+Police_box <- Police_box[-(10:11), ]
+Police_box <- Police_box[-(11:12), ]
+Police_box <- Police_box[-(12:13), ]
+Police_box <- Police_box[-(13:14), ]
+Police_box <- Police_box[-(14:15), ]
+Police_box <- Police_box[-(15:16), ]
+Police_box <- Police_box[-(16:17), ]
+Police_box <- Police_box[-(17:18), ]
+Police_box <- Police_box[-(18:19), ]
+Police_box <- Police_box[-(19:20), ]
+Police_box <- Police_box[-(20:21), ]
+Police_box <- Police_box[-(21:22), ]
+Police_box <- Police_box[-(22:23), ]
+Police_box <- Police_box[-(23:24), ]
+Police_box <- Police_box[-(24:25), ]
+Police_box <- Police_box[-(25:26), ]
+print(head(Police_box, 5))
+
+# 서울시 구역별 치안 시설 전체 개수 자료
+CS20 <- read.csv("Data20.csv")
+Police_all <- CS20
+
+print(head(Police_all, 5))
+
+# 서울시 목적별 CCTV 개수 자료
+CS21 <- read.csv("Data21.csv", fileEncoding = "euc-kr")
+CCTV_data <- CS21
+
+CCTV_data <- CCTV_data[-1, -1]
+row.names(CCTV_data) = c("종로구", "중구", "용산구", "성동구", "광진구", "동대문구", "중랑구", "성북구", "강북구", "도봉구", "노원구", "은평구", "서대문구", "마포구", "양청구", "강서구", "구로구", "금천구", "영등포구", "동작구 ", "관악구", "서초구", "강남구", "송파구", "강동구")
+
+CCTV_data <- CCTV_data[, -1]
+print(head(CCTV_data, 5))
+
+# 서울시 방범, 어린이보호구역, 공원 놀이터 CCTV 자료 정리(시각화 용)
+CS22 <- read.csv("Data22.csv")
+
+# 서울시 방범 CCTV 개수 자료
+CCTV_crime <- CS22
+CCTV_crime <- CCTV_crime[-(2:3), ]
+CCTV_crime <- CCTV_crime[-(3:4), ]
+CCTV_crime <- CCTV_crime[-(4:5), ]
+CCTV_crime <- CCTV_crime[-(5:6), ]
+CCTV_crime <- CCTV_crime[-(6:7), ]
+CCTV_crime <- CCTV_crime[-(7:8), ]
+CCTV_crime <- CCTV_crime[-(8:9), ]
+CCTV_crime <- CCTV_crime[-(9:10), ]
+CCTV_crime <- CCTV_crime[-(10:11), ]
+CCTV_crime <- CCTV_crime[-(11:12), ]
+CCTV_crime <- CCTV_crime[-(12:13), ]
+CCTV_crime <- CCTV_crime[-(13:14), ]
+CCTV_crime <- CCTV_crime[-(14:15), ]
+CCTV_crime <- CCTV_crime[-(15:16), ]
+CCTV_crime <- CCTV_crime[-(16:17), ]
+CCTV_crime <- CCTV_crime[-(17:18), ]
+CCTV_crime <- CCTV_crime[-(18:19), ]
+CCTV_crime <- CCTV_crime[-(19:20), ]
+CCTV_crime <- CCTV_crime[-(20:21), ]
+CCTV_crime <- CCTV_crime[-(21:22), ]
+CCTV_crime <- CCTV_crime[-(22:23), ]
+CCTV_crime <- CCTV_crime[-(23:24), ]
+CCTV_crime <- CCTV_crime[-(24:25), ]
+CCTV_crime <- CCTV_crime[-(25:26), ]
+CCTV_crime <- CCTV_crime[-(26:27), ]
+
+print(head(CCTV_crime, 5))
+
+# 서울시 어린이보호구역 CCTV 개수 자료
+CCTV_child <- CS22
+CCTV_child <- CCTV_child[-1, ]
+CCTV_child <- CCTV_child[-(2:3), ]
+CCTV_child <- CCTV_child[-(3:4), ]
+CCTV_child <- CCTV_child[-(4:5), ]
+CCTV_child <- CCTV_child[-(5:6), ]
+CCTV_child <- CCTV_child[-(6:7), ]
+CCTV_child <- CCTV_child[-(7:8), ]
+CCTV_child <- CCTV_child[-(8:9), ]
+CCTV_child <- CCTV_child[-(9:10), ]
+CCTV_child <- CCTV_child[-(10:11), ]
+CCTV_child <- CCTV_child[-(11:12), ]
+CCTV_child <- CCTV_child[-(12:13), ]
+CCTV_child <- CCTV_child[-(13:14), ]
+CCTV_child <- CCTV_child[-(14:15), ]
+CCTV_child <- CCTV_child[-(15:16), ]
+CCTV_child <- CCTV_child[-(16:17), ]
+CCTV_child <- CCTV_child[-(17:18), ]
+CCTV_child <- CCTV_child[-(18:19), ]
+CCTV_child <- CCTV_child[-(19:20), ]
+CCTV_child <- CCTV_child[-(20:21), ]
+CCTV_child <- CCTV_child[-(21:22), ]
+CCTV_child <- CCTV_child[-(22:23), ]
+CCTV_child <- CCTV_child[-(23:24), ]
+CCTV_child <- CCTV_child[-(24:25), ]
+CCTV_child <- CCTV_child[-(25:26), ]
+CCTV_child <- CCTV_child[-26, ]
+
+print(head(CCTV_child, 5))
+
+# 서울시 공원놀이터 CCTV 개수 자료
+CCTV_play <- CS22
+CCTV_play <- CCTV_play[-(1:2), ]
+CCTV_play <- CCTV_play[-(2:3), ]
+CCTV_play <- CCTV_play[-(3:4), ]
+CCTV_play <- CCTV_play[-(4:5), ]
+CCTV_play <- CCTV_play[-(5:6), ]
+CCTV_play <- CCTV_play[-(6:7), ]
+CCTV_play <- CCTV_play[-(7:8), ]
+CCTV_play <- CCTV_play[-(8:9), ]
+CCTV_play <- CCTV_play[-(9:10), ]
+CCTV_play <- CCTV_play[-(10:11), ]
+CCTV_play <- CCTV_play[-(11:12), ]
+CCTV_play <- CCTV_play[-(12:13), ]
+CCTV_play <- CCTV_play[-(13:14), ]
+CCTV_play <- CCTV_play[-(14:15), ]
+CCTV_play <- CCTV_play[-(15:16), ]
+CCTV_play <- CCTV_play[-(16:17), ]
+CCTV_play <- CCTV_play[-(17:18), ]
+CCTV_play <- CCTV_play[-(18:19), ]
+CCTV_play <- CCTV_play[-(19:20), ]
+CCTV_play <- CCTV_play[-(20:21), ]
+CCTV_play <- CCTV_play[-(21:22), ]
+CCTV_play <- CCTV_play[-(22:23), ]
+CCTV_play <- CCTV_play[-(23:24), ]
+CCTV_play <- CCTV_play[-(24:25), ]
+CCTV_play <- CCTV_play[-(25:26), ]
+
+print(head(CCTV_play, 5))
+
+# 서울시 구역별 CCTV 총계
+CS23 <- read.csv("Data23.csv")
+CCTV_all <- CS23
+
+print(head(CCTV_all, 5))
+
+```
+
+### 3. 데이터 시각화 및 범죄지수화
+
+```{r}
+# 구역별 범죄 전체 건수 불러오기
+Place_all
+
+```
+
+
+
+
+
+
+
+
+
+
+
