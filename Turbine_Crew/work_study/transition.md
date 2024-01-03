@@ -74,14 +74,31 @@ def run(dev_id):
     columns = ['temp', 'ws', 'humidity', 'rainfall']
     # 데이터를 마지막 2160개 데이터만 선택합니다.
     data = db[columns][-2160:]
+    # 'ws' 열의 값을 20을 곱해서 'energy' 열을 생성합니다.
     data['energy'] = data['ws'] * 20
     values = data.values[-2160:].reshape(5, 2160).astype(np.float32)
     
+    # 각 열에서 최솟값(mins)과 최댓값(maxs)을 계산합니다.
     mins = np.min(values, axis=1).reshape(5,1)
     maxs = np.max(values, axis=1).reshape(5,1)
+    
+    # 모델 입력을 위해 스케일링한 데이터를 모델에 입력하고 출력값을 얻습니다.
     values = (values - mins) / (maxs - mins) # 모델 입력을 위해 scaling
     output = predict(values[None, :, :]) # 모델 출력값 획득
+    
+    # 모델의 출력값을 다시 원래 스케일로 변환합니다.
     prediction = output * (maxs - mins) + mins # 모델 출력값 rescaling
     prediction = prediction[-1, :]
+    
+    data = {}
+    data['avg_60'] = round(float(prediction[:60].mean()), 1)
+    data['avg_180'] = round(float(prediction[:180].mean()), 1)
+    data['avg_360'] = round(float(prediction.mean(), 1))
+    data['prediction'] = np.round(prediction, 1).tolist()
+    data = orjson.jumps(data) # JSON 형태로 응답
+    return data
+    
 ```
+
+
 
