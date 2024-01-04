@@ -20,13 +20,17 @@ Parsing_sensor.py는 라즈베리파이에 있는 파일을 그대로 가져와 
 
 ### systemctl
 
-- systemctl은 리눅스 시스템에서 시스템 서비스와 데몬을 관리하는 유틸리티입니다. 이 명령을 사용하여 시스템 부팅 시 자동으로 시작되는 서비스나 데몬을 관리하고, 서비스의 상태를 확인하며, 시작/정지/재시작 및 기타 작업을 수행할 수 있습니다. systemctl은 대부분의 현대적인 리눅스 배포판에서 사용되며, 시스템 관리자가 시스템 구성을 관리하고 모니터링하는 데 도움이 됩니다.
+- systemctl은 리눅스 시스템에서 시스템 서비스와 데몬을 관리하는 유틸리티입니다. 이 명령을 사용하여 시스템 부팅 시 자동으로 시작되는 서비스나 데몬을 관리하고, 서비스의 상태를 확인하며, 시작/정지/재시작 및 기타 작업을 수행할 수 있습니다. systemctl은 대부분의 현대적인 리눅스 배포판에서 사용되며, 시스템 관리자가 시스템 구성을 관리하고 모니터링에 도움이 됩니다.
 
 
 
 # Pred_server
 
-발전량 예측 시제품 폴더. Pred_server.py가 해당 서버임
+발전 량 예측 시제품 폴더. Pred_server.py가 해당 서버임
+
+systemctl 서비스로 등록되어 부팅 시 자동으로 실행
+
+잘 작동하는지 체크하기 위해선 terminal에 sudo systemctl status pred_server를 치면 됨
 
 ```python
 app = Flask(__name__)
@@ -102,3 +106,49 @@ def run(dev_id):
 
 
 
+# Sensor_server
+
+라즈베리파이로부터 센서 데이터를 전송받고, 전송받은 데이터를 저장하는 폴더
+
+
+
+sensor_data 폴더는 라즈베리파이로부터 전송받은 센서 데이터를 년-월 별로 저장한 것
+
+```python
+app = Flask(__name__)
+
+@app.route('/api/<string:dev_id>', methods=['GET'])
+def get(dev_id):
+    if request.get_json():
+        try:
+            current_status = read_data(dev_id)
+            resp = Response(current_status, status = 200)
+        except FileNotFoundError:
+            resp = Response(status=400)
+        return resp
+    
+@app.route('/api/<strin:dev_id>', methods=['POST'])
+def post(dev_id):
+    data = request.get_json()
+    if data:
+        is_valid = check_data(dev_id, data)
+    else:
+        is_valid = False
+    if is_valid:
+        update_data(dev_id, data)
+        resp = Response("Updated", status=200)
+    else:
+        resp = Response(status=404)
+    return resp
+
+if __name__ == '__main__':
+    app.run(host='127.0.0.1', port=4465, debug=False)
+```
+
+
+
+라즈베리파이로부터 센서 데이터 받아오는 server.py
+
+Get과 post 방식 둘 다 이용할 수 있도록 구현함
+
+API는 ip:port/api/dev_01 or dev_02 or dev_nn 식으로 접근하며, 같은 주소에 get과 post 방식으로 요청을 구분지음. GET 방식으로 접근하면 해당 센서 설치위치의 현재 기상 정보를 알려줌. 현재 기상정보는 현재 서버에 보유한 데이터셋의 가장 마지막줄.POST 방식은 라즈베리파이에서 서버로 데이터를 전송할 때 사용
