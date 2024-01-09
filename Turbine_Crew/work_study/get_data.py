@@ -2,7 +2,7 @@ import requests
 
 # 서버 정보 및 개발자 ID 설정
 SERVER, PORT = '54.180.106.155', 4465  # AWS
-DEV_ID = 'dev_01'  # 귀하의 장치 ID로 변경
+DEV_ID = 'dev_02'
 
 url = f'http://{SERVER}:{PORT}/api/{DEV_ID}'
 headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
